@@ -44,6 +44,9 @@ dalla rete. L'I/O è isolato in `higeco.service.ts`.
   `E_module`: comporta una leggera sovrastima del PR nei giorni con interruzioni.
 - **P_nom = 4 kW come da consegna.** Il segnale "PR oggi" del portale differisce
   perché la sua produzione teorica implica un impianto da circa 9 kW.
+- **`fixture.json`** è una risposta reale dell'API salvata durante lo sviluppo:
+  serve da riferimento per la struttura di `items`/`data` e per rifare i conti
+  a mano senza ripetere le chiamate.
 
 ## Verifica
 
