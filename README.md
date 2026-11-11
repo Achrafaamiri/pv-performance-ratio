@@ -1,59 +1,66 @@
-# HigecoPr
+# Higeco — Performance Ratio
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.14.
+App Angular che scarica i dati orari di un impianto fotovoltaico dalle API Higeco
+e ne calcola il Performance Ratio, giornaliero e sul periodo.
 
-## Development server
-
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Esecuzione
 
 ```bash
-ng generate component component-name
+npm install
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+`http://localhost:4200` → incolla il Web API Token → *Carica*.
 
-```bash
-ng generate --help
+## Calcolo
+
+```
+PR[%] = E_real / E_module × 100
+
+E_real   = max − min del contatore "Energia" nel giorno
+E_module = P_nom × Σ (Irr_j / Irr_std) × Δt_j      P_nom = 4 kW, Irr_std = 1000 W/m²
 ```
 
-## Building
+Il calcolo sta in `src/app/pr.ts`, funzioni pure senza dipendenze da Angular o
+dalla rete. L'I/O è isolato in `higeco.service.ts`.
 
-To build the project run:
+## Scelte
 
-```bash
-ng build
-```
+- **Finestra 18–25 settembre 2026.** L'ultima settimana restituisce `data: []`:
+  ho individuato con `/getLastValue` dove finiscono i dati e spostato la finestra.
+- **Autenticazione in due passi.** Il token della consegna è un `apiToken`, da
+  scambiare su `/authenticate` per il token di sessione. Quello fornito nel PDF
+  non era valido ed è stato richiesto aggiornato.
+- **ID impianto/device/log fissi**, ricavati per nome dal portale: riduce le
+  chiamate da 5 a 2.
+- **Nessun proxy.** Verificato che l'API espone `access-control-allow-origin: *`
+  e accetta il preflight con header `authorization`.
+- **Giorni in UTC.** I timestamp dell'API hanno l'offset già incorporato
+  (verificato: picco di irraggiamento a metà giornata, "Energia giornaliera" che
+  si azzera alle 00:00), quindi UTC restituisce il giorno locale dell'impianto.
+- **Dati mancanti** in tre forme — riga assente, `null`, codici di errore stringa
+  (`"#E2"`) — normalizzati a `null` in un punto solo.
+- **Δt misurato dai timestamp**, non assunto. Intervalli oltre le 2 ore esclusi da
+  `E_module`: comporta una leggera sovrastima del PR nei giorni con interruzioni.
+- **P_nom = 4 kW come da consegna.** Il segnale "PR oggi" del portale differisce
+  perché la sua produzione teorica implica un impianto da circa 9 kW.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Verifica
 
-## Running unit tests
+`E_real` del 18/09 vale **12.9 kWh**, identico al segnale "Energia giornaliera"
+esposto dal portale. Quel giorno: E_module 16.95 kWh, **PR 76.1 %**.
+I PR giornalieri stanno fra 74.5 % e 78.2 %, il periodo a 76.4 %.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+`totalPR` è il rapporto fra le somme, non la media dei PR giornalieri.
 
-```bash
-ng test
-```
+## Limiti
 
-## Running end-to-end tests
+Nessun test automatico; solo tabelle, nessun grafico; il token di sessione non
+viene rinnovato.
 
-For end-to-end (e2e) testing, run:
+## Uso di strumenti AI
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Sviluppato con l'assistenza di Claude (Anthropic), per la ricognizione dell'API e
+per il supporto e spiegazione. Ogni informazione sull'API è stata verificata direttamente
+sul portale e il codice è stato rivisto riga per riga: comprendo e sottoscrivo
+l'intero contenuto consegnato.
