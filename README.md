@@ -1,7 +1,11 @@
-# Higeco — Performance Ratio
+# Performance Ratio — monitoraggio fotovoltaico
 
-App Angular che scarica i dati orari di un impianto fotovoltaico dalle API Higeco
-e ne calcola il Performance Ratio, giornaliero e sul periodo.
+App Angular che scarica i dati orari di un impianto fotovoltaico da un'API di
+monitoraggio e ne calcola il Performance Ratio, giornaliero e sul periodo.
+
+Il Performance Ratio è l'indice di efficienza di un impianto: quanto ha prodotto
+davvero, rapportato a quanto avrebbe prodotto con quell'irraggiamento in
+condizioni ideali.
 
 ## Esecuzione
 
@@ -21,16 +25,17 @@ E_real   = max − min del contatore "Energia" nel giorno
 E_module = P_nom × Σ (Irr_j / Irr_std) × Δt_j      P_nom = 4 kW, Irr_std = 1000 W/m²
 ```
 
-Il calcolo sta in `src/app/pr.ts`, funzioni pure senza dipendenze da Angular o
-dalla rete. L'I/O è isolato in `higeco.service.ts`.
+Il calcolo sta in `src/app/pr.ts`: funzioni pure, senza dipendenze da Angular o
+dalla rete. Autenticazione e chiamate HTTP sono isolate in un service separato,
+così la logica resta testabile da sola.
 
 ## Scelte
 
-- **Finestra 18–25 settembre 2026.** L'ultima settimana restituisce `data: []`:
-  ho individuato con `/getLastValue` dove finiscono i dati e spostato la finestra.
-- **Autenticazione in due passi.** Il token della consegna è un `apiToken`, da
-  scambiare su `/authenticate` per il token di sessione. Quello fornito nel PDF
-  non era valido ed è stato richiesto aggiornato.
+- **Finestra 18–25 settembre 2026.** Il periodo più recente restituisce
+  `data: []`: ho individuato con `/getLastValue` dove finiscono effettivamente i
+  dati e spostato la finestra lì.
+- **Autenticazione in due passi.** Il token inserito dall'utente è un `apiToken`,
+  da scambiare su `/authenticate` per il token di sessione usato nelle chiamate.
 - **ID impianto/device/log fissi**, ricavati per nome dal portale: riduce le
   chiamate da 5 a 2.
 - **Nessun proxy.** Verificato che l'API espone `access-control-allow-origin: *`
@@ -42,8 +47,8 @@ dalla rete. L'I/O è isolato in `higeco.service.ts`.
   (`"#E2"`) — normalizzati a `null` in un punto solo.
 - **Δt misurato dai timestamp**, non assunto. Intervalli oltre le 2 ore esclusi da
   `E_module`: comporta una leggera sovrastima del PR nei giorni con interruzioni.
-- **P_nom = 4 kW come da consegna.** Il segnale "PR oggi" del portale differisce
-  perché la sua produzione teorica implica un impianto da circa 9 kW.
+- **P_nom = 4 kW da specifica.** Il segnale "PR oggi" esposto dal portale
+  differisce perché la sua produzione teorica implica un impianto da circa 9 kW.
 - **`fixture.json`** è una risposta reale dell'API salvata durante lo sviluppo:
   serve da riferimento per la struttura di `items`/`data` e per rifare i conti
   a mano senza ripetere le chiamate.
@@ -64,6 +69,6 @@ viene rinnovato.
 ## Uso di strumenti AI
 
 Sviluppato con l'assistenza di Claude (Anthropic), per la ricognizione dell'API e
-per il supporto e spiegazione. Ogni informazione sull'API è stata verificata direttamente
-sul portale e il codice è stato rivisto riga per riga: comprendo e sottoscrivo
-l'intero contenuto consegnato.
+per il supporto e la spiegazione. Ogni informazione sull'API è stata verificata
+direttamente sul portale e il codice è stato rivisto riga per riga: comprendo e
+sottoscrivo l'intero contenuto del progetto.
